@@ -1,10 +1,9 @@
-import math
 import tkinter as tk
 from sys import exit
 
 root = tk.Tk()
-root.title("Boji Rage imulator 0.2")
-root.geometry("750x550")
+root.title("БЯС - Божи Ярост Симулатор")
+root.geometry("760x670")
 
 DARK_BG = "#1E1E1E"
 root.configure(bg=DARK_BG)
@@ -12,21 +11,21 @@ root.configure(bg=DARK_BG)
 TICK_RATE_MS = 33
 TIME_FACTOR = TICK_RATE_MS / 1000.0
 
-# Holds the current active root.after id for buying, so we can cancel it on release
+
 active_hold_job = None
-HOLD_DELAY_MS = 10  # How fast it buys while holding (100ms = 10 times per second)
+"""Holds the current active root.after id for buying, so we can cancel it on release"""
+
+HOLD_DELAY_MS: int = 10
 
 
-def format_number(num):
-    if math.isinf(num):
-        return "Infinity"
+def format_number(number: int) -> str:
+    if number < 1e9 - 1:
+        return f"{number:.2f}"
 
-    if num < 1_000_000:
-        return str(int(num))
-    else:
-        exponent = int(math.log10(num))
-        base = num / (10**exponent)
-        return f"{base:.2f}e{exponent}"
+    if number == float("inf"):
+        return "∞"
+
+    return f"{number:.2E}".replace("+", "").lower()
 
 
 class Factory:
