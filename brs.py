@@ -2,7 +2,7 @@ import tkinter as tk
 from sys import exit
 
 root = tk.Tk()
-root.title("БЯС - Божи Ярост Симулатор")
+root.title("БЯС - Божи Ярост Симулатор Beta")
 root.geometry("760x670")
 
 DARK_BG = "#1E1E1E"
@@ -89,10 +89,10 @@ def update_ui():
         btn_monster.config(bg="#4A4316", fg="#A0A0A0", activebackground="#4A4316")
 
     label_tickspeed.config(
-        text=f"Текущ Tickspeed: {world['tickspeed_multiplier']:.3f}x"
+        text=f"Текуща Скорост: {world['tickspeed_multiplier']:.3f}x"
     )
-    label_rage.config(text=f"Rage: {format_number(current_rage)}")
-    label_rps.config(text=f"Rage per second (RPS): {format_number(rps)}")
+    label_rage.config(text=f"Ярост: {format_number(current_rage)}")
+    label_rps.config(text=f"Гняв за секунда (ГЗС): {format_number(rps)}")
 
     for name in поредност_бутони:
         f = factories[name]
@@ -165,7 +165,7 @@ def crash_out_screen():
 
     label_infinite = tk.Label(
         root,
-        text="RAGE: INFINITY",
+        text="Ярост: Безкрайна",
         font=("Courier", 42, "bold"),
         bg=RED_BG,
         fg="#FFFFFF",
@@ -267,7 +267,7 @@ label_rage.pack(anchor="center")
 label_rps = tk.Label(root, text="", font=("Courier", 11), bg=DARK_BG, fg="#FFFFFF")
 label_rps.pack(anchor="center", pady=(0, 10))
 
-инструкции_текст = "💡 Всяко нещо произвежда предишното. Всеки 10 купени качват цената и удвояват производството.  \n Monster Energy прави времето 20% по-бързо. \n Целта е да достигнеш 1.79е308 Rage - маx стойност, която може да се представи в стандартен компютърен тип double. \n Може да задържаш вместо да спамиш бутоните!"
+инструкции_текст = "💡 Всяко нещо произвежда предишното. Всеки 10 купени качват цената и удвояват производството.  \n Monster Energy прави времето 20% по-бързо. \n Целта е да достигнеш 1.79е308 Ярост - маx стойност, която може да се представи в стандартен компютърен тип double. \n Може да задържаш вместо да спамиш бутоните!"
 label_instructions = tk.Label(
     root,
     text=инструкции_текст,
