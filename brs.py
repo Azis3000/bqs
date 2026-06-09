@@ -2,8 +2,8 @@ import tkinter as tk
 from sys import exit
 
 root = tk.Tk()
-root.title("БЯС - Божи Ярост Симулатор Beta")
-root.geometry("760x670")
+root.title("БЯС - Божи Ярост Симулатор Beta 2.1.1")
+root.geometry("1200x800")
 
 DARK_BG = "#1E1E1E"
 root.configure(bg=DARK_BG)
@@ -97,11 +97,12 @@ def update_ui():
     for name in поредност_бутони:
         f = factories[name]
         m = f.vzemi_buy_10_multiplier()
-        красиво_име = ИМЕНА_ЗА_UI.get(name, name.capitalize())
         cena_sgrada = f.vzemicena()
 
-        info_text = f"{красиво_име.ljust(12)}: {format_number(world[name]).ljust(8)} (Купени: {str(f.purchased).ljust(3)}) | Бонус: x{str(m).ljust(4)}"
-        ui_rows[name]["label"].config(text=info_text)
+        # Update each text component safely inside its column cell
+        ui_rows[name]["count"].config(text=format_number(world[name]))
+        ui_rows[name]["purchased"].config(text=f"| Купени: {f.purchased}")
+        ui_rows[name]["bonus"].config(text=f"| Бонус: x{m}")
 
         btn = ui_rows[name]["button"]
         btn.config(text=f"Купи ({format_number(cena_sgrada)})")
@@ -110,7 +111,6 @@ def update_ui():
             btn.config(bg="#2ECC71", fg="black", activebackground="#27AE60")
         else:
             btn.config(bg="#3A3A3A", fg="#888888", activebackground="#2B2B2B")
-
 
 def game_tick():
     if world["rage"] >= 1.76e308:
@@ -290,31 +290,79 @@ divider.pack()
 game_frame = tk.Frame(root, bg=DARK_BG)
 game_frame.pack(pady=10, padx=40, fill="x")
 
+# Column sizes adjusted to perfectly fit "Купени:" and "Бонус:" text lengths
+game_frame.columnconfigure(0, minsize=220)  # Column 0: Factory Name
+game_frame.columnconfigure(1, minsize=140)  # Column 1: Quantity Owned
+game_frame.columnconfigure(2, minsize=130)  # Column 2: | Купени: X
+game_frame.columnconfigure(3, minsize=180)  # Column 3: | Бонус: xX
+game_frame.columnconfigure(4, weight=1)      # Column 4: Action Button
+
 ui_rows = {}
 
 for i, b_name in enumerate(поредност_бутони):
-    row_label = tk.Label(
+    красиво_име = ИМЕНА_ЗА_UI.get(b_name, b_name.capitalize())
+
+    # Column 0: Name
+    lbl_name = tk.Label(
         game_frame,
-        text="",
-        font=("Courier", 10),
+        text=красиво_име,
+        font=("Courier", 11, "bold"),
         anchor="w",
-        justify="left",
         bg=DARK_BG,
         fg="#FFFFFF",
     )
-    row_label.grid(row=i, column=0, sticky="w", padx=(0, 20), pady=4)
+    lbl_name.grid(row=i, column=0, sticky="w", pady=6)
 
-    row_btn = tk.Button(game_frame, text="", width=15, relief="flat")
-    # Bind hold logic to the building buttons
+    # Column 1: Total Amount Owned
+    lbl_count = tk.Label(
+        game_frame,
+        text="0.00",
+        font=("Courier", 11),
+        anchor="e",
+        bg=DARK_BG,
+        fg="#2ECC71",
+    )
+    lbl_count.grid(row=i, column=1, sticky="e", padx=10, pady=6)
+
+    # Column 2: Purchased count with text and separator
+    lbl_purchased = tk.Label(
+        game_frame,
+        text="| Купени: 0",
+        font=("Courier", 10),
+        anchor="w",
+        bg=DARK_BG,
+        fg="#888888",
+    )
+    lbl_purchased.grid(row=i, column=2, sticky="w", padx=5, pady=6)
+
+    # Column 3: Multiplier Bonus with text and separator
+    lbl_bonus = tk.Label(
+        game_frame,
+        text="| Бонус: x1",
+        font=("Courier", 10),
+        anchor="w",
+        bg=DARK_BG,
+        fg="#FFD700",
+    )
+    lbl_bonus.grid(row=i, column=3, sticky="w", padx=5, pady=6)
+
+    # Column 4: Buy Button
+    row_btn = tk.Button(
+        game_frame, text="", width=22, relief="flat", font=("Helvetica", 10)
+    )
     row_btn.bind(
-        "<ButtonPress-1>", lambda event, name=b_name: start_buying_building(name)
+        "<ButtonPress-1>",
+        lambda event, name=b_name: start_buying_building(name),
     )
     row_btn.bind("<ButtonRelease-1>", stop_buying)
-    row_btn.grid(row=i, column=1, sticky="e", pady=4)
+    row_btn.grid(row=i, column=4, sticky="e", pady=6)
 
-    ui_rows[b_name] = {"label": row_label, "button": row_btn}
-
-
+    ui_rows[b_name] = {
+        "count": lbl_count,
+        "purchased": lbl_purchased,
+        "bonus": lbl_bonus,
+        "button": row_btn,
+    }
 def cheat_code(event):
     world["iliq"] = 1e300
     update_ui()
