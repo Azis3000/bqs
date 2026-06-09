@@ -19,10 +19,13 @@ HOLD_DELAY_MS: int = 10
 
 
 def format_number(number: int) -> str:
-    if number < 1_000_000:
+    if number < 1e9 - 1:
         return f"{number:.2f}"
 
-    return f"{number:.2E}".replace("+", "")
+    if number == float("inf"):
+        return "∞"
+
+    return f"{number:.2E}".replace("+", "").lower()
 
 
 class Factory:
