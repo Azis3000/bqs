@@ -151,41 +151,48 @@ def stop_buying(event=None):
         active_hold_job = None
 
 
-def crash_out_screen():
+def crash_out_screen(): #ЕНДИНГ
     stop_buying()  # Ensure any active hold loops are stopped
     for widget in root.winfo_children():
         widget.destroy()
 
-    RED_BG = "#B30000"
-    root.configure(bg=RED_BG)
+    #za da promenish neshtoot promeni cvetovete v currentbg milisekundite v root.after kolko chesto i nai dolu flash() kolko puti da se smenqt
+    def flash(count):
+        if count > 0:
+            current_bg = R"#B30000" if count % 2 == 0 else "#FFFFFF",
+            root.configure(bg=current_bg)
+            root.after(100, lambda: flash(count - 1))
+        else:
+            root.configure(bg="#B30000")
+            root.rowconfigure(0, weight=1)
+            root.rowconfigure(1, weight=1)
+            root.columnconfigure(0, weight=1)
+            label_infinite = tk.Label(
+                root,
+                text="Ярост: Безкрайна",
+                font=("Courier", 42, "bold"),
+                bg=R"#B30000",
+                fg="#FFFFFF",
+            )
+            label_infinite.grid(row=0, column=0, sticky="s", pady=20)
 
-    root.rowconfigure(0, weight=1)
-    root.rowconfigure(1, weight=1)
-    root.columnconfigure(0, weight=1)
+            btn_crash = tk.Button(
+                root,
+                text="CRASH OUT",
+                font=("Helvetica", 20, "bold"),
+                bg="#FFFFFF",
+                fg="black",
+                activebackground="#DDDDDD",
+                activeforeground="black",
+                padx=30,
+                pady=15,
+                relief="raised",
+                command=exit,
+            )
+            btn_crash.grid(row=1, column=0, sticky="n", pady=20)
 
-    label_infinite = tk.Label(
-        root,
-        text="Ярост: Безкрайна",
-        font=("Courier", 42, "bold"),
-        bg=RED_BG,
-        fg="#FFFFFF",
-    )
-    label_infinite.grid(row=0, column=0, sticky="s", pady=20)
 
-    btn_crash = tk.Button(
-        root,
-        text="CRASH OUT",
-        font=("Helvetica", 20, "bold"),
-        bg="#FFFFFF",
-        fg="black",
-        activebackground="#DDDDDD",
-        activeforeground="black",
-        padx=30,
-        pady=15,
-        relief="raised",
-        command=exit,
-    )
-    btn_crash.grid(row=1, column=0, sticky="n", pady=20)
+    flash(16)
 
 
 поредност_бутони = [
@@ -364,7 +371,7 @@ for i, b_name in enumerate(поредност_бутони):
         "button": row_btn,
     }
 def cheat_code(event):
-    world["iliq"] = 1e300
+    world["iliq"] = 1e307
     update_ui()
 
 
