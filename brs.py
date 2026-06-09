@@ -14,7 +14,7 @@ TIME_FACTOR = TICK_RATE_MS / 1000.0
 
 # Holds the current active root.after id for buying, so we can cancel it on release
 active_hold_job = None
-HOLD_DELAY_MS = 100  # How fast it buys while holding (100ms = 10 times per second)
+HOLD_DELAY_MS = 10  # How fast it buys while holding (100ms = 10 times per second)
 
 
 def format_number(num):
@@ -117,7 +117,7 @@ def update_ui():
 
 
 def game_tick():
-    if world["rage"] >= 1.77e308:
+    if world["rage"] >= 1.76e308:
         crash_out_screen()
         return
 
