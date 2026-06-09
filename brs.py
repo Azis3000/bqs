@@ -3,7 +3,7 @@ import tkinter as tk
 from sys import exit
 
 root = tk.Tk()
-root.title("Boji rage simulator")
+root.title("Boji Rage Simulator 0.2")
 root.geometry("750x550")
 
 DARK_BG = "#1E1E1E"
