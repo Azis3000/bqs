@@ -27,11 +27,10 @@ def format_number(num):
 
 
 class Factory:
-    def __init__(self, ime, basecena, pravi=None, stepen=1, cost_multiplier=1e3):
+    def __init__(self, ime, basecena, pravi=None, cost_multiplier=1e3):
         self.ime = ime
         self.basecena = basecena
         self.pravi = pravi
-        self.stepen = stepen
         self.cost_multiplier = cost_multiplier
         self.purchased = 0
 
@@ -46,12 +45,7 @@ class Factory:
     def info_proizvodstvo_za_sekunda(self, world):
         kolko_imam = world.get(self.ime, 0)
         bonus = self.vzemi_buy_10_multiplier()
-        return (
-            kolko_imam
-            * (2 ** (self.stepen - 1))
-            * bonus
-            * world["tickspeed_multiplier"]
-        )
+        return kolko_imam * bonus * world["tickspeed_multiplier"]
 
     def kupi(self, world):
         cena = self.vzemicena()
