@@ -3,7 +3,7 @@ import tkinter as tk
 from sys import exit
 
 root = tk.Tk()
-root.title("Boji Rage Simulator 0.2")
+root.title("Boji Rage imulator 0.2")
 root.geometry("750x550")
 
 DARK_BG = "#1E1E1E"
@@ -18,6 +18,9 @@ HOLD_DELAY_MS = 10  # How fast it buys while holding (100ms = 10 times per secon
 
 
 def format_number(num):
+    if math.isinf(num):
+        return "Infinity"
+
     if num < 1_000_000:
         return str(int(num))
     else:
