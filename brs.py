@@ -1,4 +1,3 @@
-import math
 import tkinter as tk
 from sys import exit
 
@@ -17,13 +16,11 @@ active_hold_job = None
 HOLD_DELAY_MS = 10  # How fast it buys while holding (100ms = 10 times per second)
 
 
-def format_number(num):
-    if num < 1_000_000:
-        return str(int(num))
-    else:
-        exponent = int(math.log10(num))
-        base = num / (10**exponent)
-        return f"{base:.2f}e{exponent}"
+def format_number(number: int) -> str:
+    if number < 1_000_000:
+        return str(int(number))
+
+    return f"{number:.2E}"
 
 
 class Factory:
