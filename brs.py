@@ -1,6 +1,8 @@
 import tkinter as tk
 from sys import exit
 
+type Number = int | float
+
 root = tk.Tk()
 root.title("БЯС - Божи Ярост Симулатор Beta 2.1.1")
 root.geometry("1200x800")
@@ -18,7 +20,7 @@ active_hold_job = None
 HOLD_DELAY_MS: int = 10
 
 
-def format_number(number: int) -> str:
+def format_number(number: Number) -> str:
     if number < 1e9 - 1:
         return f"{number:.2f}"
 
@@ -29,68 +31,81 @@ def format_number(number: int) -> str:
 
 
 class Factory:
-    def __init__(self, ime, basecena, pravi=None, cost_multiplier=1e3):
+    def __init__(
+        self,
+        ime: str,
+        basecena: Number,
+        pravi: str | None = None,
+        cost_multiplier: Number = 1e3,
+    ):
         self.ime = ime
         self.basecena = basecena
         self.pravi = pravi
         self.cost_multiplier = cost_multiplier
         self.purchased = 0
 
-    def vzemicena(self):
+    def vzemicena(self) -> Number:
         tier = self.purchased // 10
         return self.basecena * (self.cost_multiplier**tier)
 
-    def vzemi_buy_10_multiplier(self):
+    def vzemi_buy_10_multiplier(self) -> Number:
         tier = self.purchased // 10
         return 2**tier
 
-    def info_proizvodstvo_za_sekunda(self, world):
+    def info_proizvodstvo_za_sekunda(self, world: dict[str, Number]) -> Number:
         kolko_imam = world.get(self.ime, 0)
         bonus = self.vzemi_buy_10_multiplier()
         return kolko_imam * bonus * world["tickspeed_multiplier"]
 
-    def kupi(self, world):
+    def kupi(self, world) -> bool:
         cena = self.vzemicena()
-        if world["rage"] >= cena:
-            world["rage"] -= cena
-            world[self.ime] += 1
-            self.purchased += 1
-            return True
+
+        if world["rage"] < cena:
+            return False
+
+        world["rage"] -= cena
+        world[self.ime] += 1
+        self.purchased += 1
+
+        return True
+
+    def suzdai(self, world: dict[str, Number]) -> None:
+        if self.pravi is None:
+            return
+
+        proizvodstvo_za_sekunda = self.info_proizvodstvo_za_sekunda(world)
+        world[self.pravi] += proizvodstvo_za_sekunda * TIME_FACTOR
+
+
+def kupi_monster() -> bool:
+    cena = world["monster_cena"]
+
+    if world["rage"] < cena:
         return False
 
-    def suzdai(self, world):
-        if self.pravi:
-            proizvodstvo_za_sekunda = self.info_proizvodstvo_za_sekunda(world)
-            world[self.pravi] += proizvodstvo_za_sekunda * TIME_FACTOR
+    world["rage"] -= cena
+    world["monster_count"] += 1
+    world["tickspeed_multiplier"] *= 1.20
+    world["monster_cena"] *= 10
+    update_ui()
+
+    return True
 
 
-def kupi_monster():
-    cena = world["monster_cena"]
-    if world["rage"] >= cena:
-        world["rage"] -= cena
-        world["monster_count"] += 1
-        world["tickspeed_multiplier"] *= 1.20
-        world["monster_cena"] *= 10
-        update_ui()
-        return True
-    return False
-
-
-def update_ui():
+def update_ui() -> None:
     current_rage = world["rage"]
     rps = factories["iliq"].info_proizvodstvo_za_sekunda(world)
 
-    btn_monster.config(
-        text=f"🍍 Купи Monster Energy ({world['monster_count']}) - Цена: {format_number(world['monster_cena'])}"
-    )
+    cena = format_number(world["monster_cena"])
+    broi = world["monster_count"]
+    btn_monster.config(text=f"🍍 Купи Монстър ({broi}) - Цена: {cena}")
+
     if current_rage >= world["monster_cena"]:
         btn_monster.config(bg="#FFD700", fg="black", activebackground="#E6C200")
     else:
         btn_monster.config(bg="#4A4316", fg="#A0A0A0", activebackground="#4A4316")
 
-    label_tickspeed.config(
-        text=f"Текуща Скорост: {world['tickspeed_multiplier']:.3f}x"
-    )
+    label_tickspeed.config(text=f"Текуща Скорост: {world['tickspeed_multiplier']:.2f}x")
     label_rage.config(text=f"Ярост: {format_number(current_rage)}")
     label_rps.config(text=f"Гняв за секунда (ГЗС): {format_number(rps)}")
 
@@ -112,21 +127,23 @@ def update_ui():
         else:
             btn.config(bg="#3A3A3A", fg="#888888", activebackground="#2B2B2B")
 
-def game_tick():
+
+def game_tick() -> None:
     if world["rage"] >= 1.76e308:
         crash_out_screen()
         return
 
-    for f in factories.values():
-        f.suzdai(world)
+    for factory in factories.values():
+        factory.suzdai(world)
 
     update_ui()
     root.after(TICK_RATE_MS, game_tick)
 
 
 # --- HOLD ACTION LOGIC ---
-def start_buying_building(name):
+def start_buying_building(name) -> None:
     global active_hold_job
+
     if factories[name].kupi(world):
         update_ui()
         # Keep buying as long as the mouse button is held down
@@ -136,66 +153,68 @@ def start_buying_building(name):
         stop_buying()
 
 
-def start_buying_monster():
+def start_buying_monster() -> None:
     global active_hold_job
+
     if kupi_monster():
         active_hold_job = root.after(HOLD_DELAY_MS, start_buying_monster)
     else:
         stop_buying()
 
 
-def stop_buying(event=None):
+def stop_buying(_=None) -> None:
     global active_hold_job
+
     if active_hold_job is not None:
         root.after_cancel(active_hold_job)
         active_hold_job = None
 
 
-def crash_out_screen(): #ЕНДИНГ
+def crash_out_screen() -> None:  # ЕНДИНГ
     stop_buying()  # Ensure any active hold loops are stopped
     for widget in root.winfo_children():
         widget.destroy()
 
-    #za da promenish neshtoot promeni cvetovete v currentbg milisekundite v root.after kolko chesto i nai dolu flash() kolko puti da se smenqt
-    def flash(count):
+    # za da promenish neshtoot promeni cvetovete v currentbg milisekundite v root.after kolko chesto i nai dolu flash() kolko puti da se smenqt
+    def flash(count) -> None:
         if count > 0:
-            current_bg = R"#B30000" if count % 2 == 0 else "#FFFFFF",
+            current_bg = R"#B30000" if count % 2 == 0 else "#FFFFFF"
             root.configure(bg=current_bg)
             root.after(100, lambda: flash(count - 1))
-        else:
-            root.configure(bg="#B30000")
-            root.rowconfigure(0, weight=1)
-            root.rowconfigure(1, weight=1)
-            root.columnconfigure(0, weight=1)
-            label_infinite = tk.Label(
-                root,
-                text="Ярост: Безкрайна",
-                font=("Courier", 42, "bold"),
-                bg=R"#B30000",
-                fg="#FFFFFF",
-            )
-            label_infinite.grid(row=0, column=0, sticky="s", pady=20)
+            return
 
-            btn_crash = tk.Button(
-                root,
-                text="CRASH OUT",
-                font=("Helvetica", 20, "bold"),
-                bg="#FFFFFF",
-                fg="black",
-                activebackground="#DDDDDD",
-                activeforeground="black",
-                padx=30,
-                pady=15,
-                relief="raised",
-                command=exit,
-            )
-            btn_crash.grid(row=1, column=0, sticky="n", pady=20)
+        root.configure(bg="#B30000")
+        root.rowconfigure(0, weight=1)
+        root.rowconfigure(1, weight=1)
+        root.columnconfigure(0, weight=1)
+        label_infinite = tk.Label(
+            root,
+            text="Ярост: Безкрайна",
+            font=("Courier", 42, "bold"),
+            bg=R"#B30000",
+            fg="#FFFFFF",
+        )
+        label_infinite.grid(row=0, column=0, sticky="s", pady=20)
 
+        btn_crash = tk.Button(
+            root,
+            text="CRASH OUT",
+            font=("Helvetica", 20, "bold"),
+            bg="#FFFFFF",
+            fg="black",
+            activebackground="#DDDDDD",
+            activeforeground="black",
+            padx=30,
+            pady=15,
+            relief="raised",
+            command=exit,
+        )
+        btn_crash.grid(row=1, column=0, sticky="n", pady=20)
 
     flash(16)
 
 
-поредност_бутони = [
+поредност_бутони: list[str] = [
     "iliq",
     "pushka",
     "megailiq",
@@ -206,7 +225,7 @@ def crash_out_screen(): #ЕНДИНГ
     "zettailiq",
 ]
 
-ИМЕНА_ЗА_UI = {
+ИМЕНА_ЗА_UI: dict[str, str] = {
     "iliq": "Разглобена Клавиатура",
     "pushka": "Загуба",
     "megailiq": "Изгубено 1v1",
@@ -217,30 +236,18 @@ def crash_out_screen(): #ЕНДИНГ
     "zettailiq": "Синагога",
 }
 
-factories = {
-    "zettailiq": Factory(
-        "zettailiq", basecena=1e24, cost_multiplier=1e15, pravi="exailiq"
-    ),
-    "exailiq": Factory(
-        "exailiq", basecena=1e18, cost_multiplier=1e12, pravi="petailiq"
-    ),
-    "petailiq": Factory(
-        "petailiq", basecena=1e13, cost_multiplier=1e10, pravi="terailiq"
-    ),
-    "terailiq": Factory(
-        "terailiq", basecena=1e9, cost_multiplier=1e8, pravi="gigailiq"
-    ),
-    "gigailiq": Factory(
-        "gigailiq", basecena=1e6, cost_multiplier=1e6, pravi="megailiq"
-    ),
-    "megailiq": Factory(
-        "megailiq", basecena=10000, cost_multiplier=1e5, pravi="pushka"
-    ),
-    "pushka": Factory("pushka", basecena=100, cost_multiplier=1e4, pravi="iliq"),
-    "iliq": Factory("iliq", basecena=10, cost_multiplier=1e3, pravi="rage"),
-}
+factories: dict[str, Factory] = {
+    "zettailiq": Factory("zettailiq", 1e24,  "exailiq",  1e15),
+      "exailiq": Factory("exailiq",   1e18,  "petailiq", 1e12),
+     "petailiq": Factory("petailiq",  1e13,  "terailiq", 1e10),
+     "terailiq": Factory("terailiq",  1e9,   "gigailiq", 1e8),
+     "gigailiq": Factory("gigailiq",  1e6,   "megailiq", 1e6),
+     "megailiq": Factory("megailiq",  10000, "pushka",   1e5),
+       "pushka": Factory("pushka",    100,   "iliq",     1e4),
+         "iliq": Factory("iliq",      10,    "rage",     1e3),
+}  # fmt: off
 
-world = {
+world: dict[str, Number] = {
     "rage": 10,
     "iliq": 0,
     "pushka": 0,
@@ -274,10 +281,17 @@ label_rage.pack(anchor="center")
 label_rps = tk.Label(root, text="", font=("Courier", 11), bg=DARK_BG, fg="#FFFFFF")
 label_rps.pack(anchor="center", pady=(0, 10))
 
-инструкции_текст = "💡 Всяко нещо произвежда предишното. Всеки 10 купени качват цената и удвояват производството.  \n Monster Energy прави времето 20% по-бързо. \n Целта е да достигнеш 1.79е308 Ярост - маx стойност, която може да се представи в стандартен компютърен тип double. \n Може да задържаш вместо да спамиш бутоните!"
+инструкции: str = """\
+💡 Всяко нещо произвежда предишното.
+Всеки 10 купени качват цената и удвояват производството.
+Monster Energy прави времето 20% по-бързо.
+Целта е да достигнеш 1.79е308 Ярост - маx стойност, която може да се представи в стандартен компютърен тип double.
+Може да задържаш вместо да спамиш бутоните!\
+"""
+
 label_instructions = tk.Label(
     root,
-    text=инструкции_текст,
+    text=инструкции,
     font=("Helvetica", 9, "italic"),
     bg=DARK_BG,
     fg="#BBBBBB",
@@ -302,7 +316,7 @@ game_frame.columnconfigure(0, minsize=220)  # Column 0: Factory Name
 game_frame.columnconfigure(1, minsize=140)  # Column 1: Quantity Owned
 game_frame.columnconfigure(2, minsize=130)  # Column 2: | Купени: X
 game_frame.columnconfigure(3, minsize=180)  # Column 3: | Бонус: xX
-game_frame.columnconfigure(4, weight=1)      # Column 4: Action Button
+game_frame.columnconfigure(4, weight=1)  # Column 4: Action Button
 
 ui_rows = {}
 
@@ -370,7 +384,9 @@ for i, b_name in enumerate(поредност_бутони):
         "bonus": lbl_bonus,
         "button": row_btn,
     }
-def cheat_code(event):
+
+
+def cheat_code(_) -> None:
     world["iliq"] = 1e307
     update_ui()
 
